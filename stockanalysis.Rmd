@@ -1,0 +1,88 @@
+---
+title: "Stock Analysis"
+author: "Frank Wang"
+date: "November 22, 2018"
+output: html_document
+---
+
+## Stock Analysis Assignment {-}
+
+Download stock data from http://finance.yahoo.com.  In this example, we retrieved
+a year (from April 10, 2017 to April 6, 2018) of data of Apple Inc. (AAPL), saved as `AAPL.csv`.
+
+We used the `read.csv` command to import data and assign them to the object
+`dat`.  Be sure that the file is in the current directory; if not, use
+the `setwd` command (Under Session/Set Work Directory).  The `head` command is for obtaining the first few rows of the data.  We show the stock price as a function of time using the `plot` command.  Note that the `type` is `l` (el) meaning line not `1` (one). 
+```{r}
+dat <- read.csv("AAPL.csv")
+head(dat)
+plot(as.Date(dat$Date), dat$Adj.Close, type = "l")
+```
+
+We assign the adjusted close to the vector called `close` for later 
+convenience.  The number of trading days is the length of the vector, denoted
+by `n`.
+```{r}
+close <- dat$Adj.Close
+(n <- length(close))
+```
+In financial news, we often hear relative, or percentage changes.  A
+stock's rate of return in any time period $t$ is defined as
+$$
+R_{t} = \frac{S_{t} - S_{t-1}}{S_{t-1}}
+$$
+where $S_{t}$ and $S_{t-1}$ are the closing prices
+at time $t$ and $t-1$, respectively.  Below is the calculation.  
+A histogram is made for the relative changes.  
+```{r}
+daily.diff <- close[2:n] - close[1:n-1]
+rel.change <- daily.diff/close[1:n-1]
+hist(rel.change, breaks = 20)
+```
+
+We can find the five-number summary and produce a box plot as below.  
+```{r}
+summary(rel.change)
+boxplot(rel.change, horizontal = TRUE)
+```
+
+To find the mean and standard deviation, use the following commands.  
+```{r}
+(x.bar <- mean(rel.change))
+(stdev <- sd(rel.change))
+```
+The number of trading day is `n` above
+```{r}
+n
+```
+and the number of days when the change is less than the mean is
+```{r}
+sum(rel.change < x.bar)
+```
+Express the changes as $z$-scores, and overlay the histogram of $z$
+with a standard normal distribution probability density function.
+```{r}
+z.score <- (rel.change - mean(rel.change))/sd(rel.change)
+hist(z.score, breaks = 20, freq = FALSE)
+curve(dnorm(x), col = "blue", add = TRUE)
+```
+
+One financial model assumes that stocks advances with geometric Brownian motion,
+$$
+S_{i+1} = S_{i} + \mu S_{i} \Delta t + \sigma S_{i} \epsilon \sqrt{\Delta t}
+$$
+where $\epsilon$ is a random number drawn from a standardized normal distribution.  
+Use \$168.38 as the initial price (the closing value on April 6, 2018),
+we simulate a possible outcome for the next year.  You should re-run this 
+several times to observe the possible outcomes.  
+```{r}
+S <- c()
+close[n]
+S[1] <- close[n]
+for (i in 1:n){
+  S[i+1] <- S[i] + x.bar*S[i]*1 + stdev*S[i]*rnorm(1)*sqrt(1)
+}
+plot(S, type = "l")
+```
+
+
